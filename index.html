@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paola Albarrán Godoy, Yael Daniel Hernández González">
+<meta name="dcterms.date" content="2026-04-14">
+
+<title>Análisis scRNA-seq: Efecto de Idasanutlin y Nilotinib en LMC</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Entregable_SingleCell_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Entregable_SingleCell_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Entregable_SingleCell_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Entregable_SingleCell_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="Entregable_SingleCell_files/libs/quarto-html/popper.min.js"></script>
+<script src="Entregable_SingleCell_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Entregable_SingleCell_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Entregable_SingleCell_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Entregable_SingleCell_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Entregable_SingleCell_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Entregable_SingleCell_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Entregable_SingleCell_files/libs/bootstrap/bootstrap-6adfb7093794c74a9af8e000423d388d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Análisis scRNA-seq: Efecto de Idasanutlin y Nilotinib en LMC</h1>
+<p class="subtitle lead">Control de calidad y normalización de los datos</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Paola Albarrán Godoy, Yael Daniel Hernández González </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="descripción-de-los-datos" class="level2">
+<h2 class="anchored" data-anchor-id="descripción-de-los-datos">Descripción de los datos</h2>
+<section id="información-general" class="level3">
+<h3 class="anchored" data-anchor-id="información-general"><strong>Información general</strong></h3>
+<ul>
+<li><strong>Título del estudio:</strong> Single cell RNA-seq analysis of the effects of idasanutlin and/or nilotinib on primary human CML cells engrafted into the bone marrow of immunocompromised mice</li>
+<li><strong>Especie:</strong> <em>Homo sapiens</em>.</li>
+<li><strong>Número de acceso GEO:</strong> <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE218185">GSE218185</a></li>
+<li><strong>Tipo de experimento:</strong> scRNA-seq (Expression profiling by high throughput sequencing).</li>
+<li><strong>Publicado:</strong> 19 Dic 2023</li>
+<li><strong>Artículo relacionado:</strong> Scott MT, Liu W, Mitchell R, Clarke CJ et al.&nbsp;Activating p53 abolishes self-renewal of quiescent leukaemic stem cells in residual CML disease. Nat Commun 2024 Jan 22;15(1):651. PMID:&nbsp;<a href="https://www.ncbi.nlm.nih.gov/pubmed/38246924" title="Link to PubMed record">38246924</a><br>
+</li>
+</ul>
+</section>
+<section id="contexto-biológico" class="level3">
+<h3 class="anchored" data-anchor-id="contexto-biológico">Contexto biológico</h3>
+<p>La Leucemia Mieloide Crónica (LMC) es una neoplasia mieloproliferativa originada por la fusión de los genes BCR::ABL1, la cual produce una oncoproteína responsable de la proliferación descontrolada de la línea mieloide. A pesar del éxito de los inhibidores de tirosina cinasa (TKI) como el <strong>nilotinib (NIL)</strong>, que permiten un control parcial de la enfermedad, su erradicación aún sigue siendo un desafío. Las células madre leucémicas (LSC) quiescentes persisten como enfermedad residual que, cuando se suspende el tratamiento son las principales responsable reactivar la leucemia.</p>
+<p>El paper asociado (Scott et al., <em>Nature Communications</em>, 2024) observó que las LSC quiescentes comparten redes regulatorias con células madre embrionarias (ES), incluyendo niveles bajos de p53 que les permiten preservar su capacidad de autorrenovación. Por lo que, la hipótesis es que la reactivación de p53 aboliría la autorrenovación de las LSC.</p>
+</section>
+<section id="diseño-experimental" class="level3">
+<h3 class="anchored" data-anchor-id="diseño-experimental">Diseño experimental</h3>
+<p>Se empleó un modelo in vivo de xenoinjerto derivado de paciente (<strong>PDX</strong>). Para ello, se utilizaron ratones inmunodeprimidos (<strong>NSG/NRG</strong>) injertados con células primarias de LMC (<strong>CD34+, p53 WT</strong>). Posteriormente, el análisis de la respuesta al tratamiento, se hizo mediante scRNA-seq en células <strong>(huCD45+ o huCD34+</strong>) aisladas de su médula ósea.</p>
+<p>La respuesta al tratamiento se evaluó comparando los siguientes grupos:</p>
+<ol type="1">
+<li><p><strong>Vehículo (VEH):</strong> Grupo control sin fármacos activos.</p></li>
+<li><p><strong>Nilotinib (NIL):</strong> Tratamiento exclusivo con TKI durante 28 días.</p></li>
+<li><p><strong>Nilotinib + Idasanutlin (NIL+IDASA):</strong> Tratamiento combinado donde se administró NIL (TKI) junto con IDASA. <em>Nota: Tras la fase de tratamiento, los animales entraron en un periodo libre de fármacos de 28 días para evaluar el agotamiento a largo plazo de las LSC.</em></p></li>
+</ol>
+<p><br>
+Aunque el estudio utilizó una cohorte total de 46 ratones para análisis de citometría (26 en COH4 y 20 en COH5), el análisis de <strong>scRNA-seq</strong> se centró en una selección representativa de réplicas biológicas:</p>
+<ol type="1">
+<li><strong>Cohorte 4 (fin del tratamiento):</strong> Las células se recolectaron inmediatamente tras finalizar los 28 días de tratamiento. Para el análisis de scRNA-seq se seleccionaron un total de <strong>6 muestras</strong>.</li>
+<li><strong>Cohorte 5 (periodo libre de tratamiento):</strong> Se procesaron <strong>3 muestras</strong> adicionales para el analisis de scRNA-seq, para representar la persistencia de las células troncales.</li>
+</ol>
+</section>
+<section id="resultados-del-artículo" class="level3">
+<h3 class="anchored" data-anchor-id="resultados-del-artículo"><strong>Resultados del artículo:</strong></h3>
+<p>La similitud molecular de las LSC quiescentes y las células embrionarias (ES), denominada ESC-REG, es dependiente de BCR::ABL1 y está enriquecida para las redes transcripcionales de c-MYC y Nanog. Los autores inhibieron la proteína MDM2, la cual es responsable de degradar a p53 con el fármaco <strong>idasanutlin (IDASA)</strong> y en combinación con NIL, observaron una reducción en su capacidad de formación de colonias (CFC) y un agotamiento progresivo de las células LSC quiescentes una vez que el tratamiento fue suspendido, confirmando la pérdida de la capacidad de autorrenovación.</p>
+<hr>
+</section>
+</section>
+<section id="paso-1.-cargar-paquetes" class="level2">
+<h2 class="anchored" data-anchor-id="paso-1.-cargar-paquetes">Paso 1. Cargar paquetes</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Matrix)       </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Seurat)        <span class="co"># Principal para análisis de scRNA-seq</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)         </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)       </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)     <span class="co"># Combinar gráficos</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DoubletFinder) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<hr>
+</section>
+<section id="paso-2.-definir-estructura-de-muestras" class="level2">
+<h2 class="anchored" data-anchor-id="paso-2.-definir-estructura-de-muestras">Paso 2. Definir estructura de muestras</h2>
+<p>Cada muestra GSM tiene su propia carpeta con los tres archivos de 10X Genomics</p>
+<ol type="1">
+<li><p><code>barcodes.tsv.gz:</code> Contiene los identificadores únicos correspondientes a cada célula capturada. Definirá los nombres de las <strong>columnas</strong> de la matriz de expresión.</p></li>
+<li><p><code>features.tsv.gz:</code> Contiene la lista de todos los genes anotados. Este archivo define los nombres de las <strong>filas</strong> de la matriz de expresión.</p></li>
+<li><p><code>matrix.mtx.gz</code>: Contiene los valores numéricos crudos, es decir, la cantidad exacta de transcritos (UMIs) que se detectaron para cada gen dentro de cada célula.</p></li>
+</ol>
+<p>Como anteriormente se mencionó, el diseño tiene <strong>3 condiciones experimentales</strong> (VEH, NIL, NIL+IDASA), junto con <strong>2 estrategias de aislamiento</strong> (CD45+, CD34+) para capturar distintos niveles de resolución biológica.</p>
+<ul>
+<li><p><strong>huCD45+</strong> nos permite ver el <strong>panorama completo</strong> del sistema hematopoyético humano: células maduras mieloides, progenitores y LSC al mismo tiempo.</p></li>
+<li><p><strong>huCD34+</strong> es un marcador de células progenitoras primitivas que enriquece específicamente para las <strong>células madre leucémicas (LSC)</strong> y progenitores tempranos.</p></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/InformaciónSuplementaria.png" class="img-fluid figure-img" alt="Información suplementaria encontrada en GEO para el GSE218185."></p>
+<figcaption>Información suplementaria encontrada en GEO para el GSE218185.</figcaption>
+</figure>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>base_dir <span class="ot">&lt;-</span> <span class="st">"~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data"</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Tres experimentos de captura scRNA-seq:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   EXPT1: células huCD45+ (panorama completo)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   EXPT2: células huCD34+ de COH4 (LSC enriquecidas)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   EXPT3: células huCD34+ de COH4 y COH5 </span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>muestras <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># EXPT1: huCD45+ — COH4 </span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># VEH, NIL+IDASA</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH4_EXPT1_VEH_CD45"</span>       <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736197"</span>),</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH4_EXPT1_NIL_IDASA_CD45"</span> <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736198"</span>),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># EXPT2: huCD34+ — COH4 </span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># VEH, NIL, NILNIL+IDASA</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH4_EXPT2_VEH_CD34"</span>       <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736199"</span>),</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH4_EXPT2_NIL_CD34"</span>       <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736200"</span>),</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH4_EXPT2_NIL_IDASA_CD34"</span> <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736201"</span>),</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># EXPT3: huCD34+ — COH4 y COH5 </span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># GSM6736202: COH4 VEH</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># GSM6736203-205: COH5 VEH, NIL, NILNIL+IDASA</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH4_EXPT3_VEH_CD34"</span>       <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736202"</span>),</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH5_EXPT3_VEH_CD34"</span>       <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736203"</span>),</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH5_EXPT3_NIL_CD34"</span>       <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736204"</span>),</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  <span class="st">"COH5_EXPT3_NIL_IDASA_CD34"</span> <span class="ot">=</span> <span class="fu">file.path</span>(base_dir, <span class="st">"GSM6736205"</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Verificar que todas mis carpetas estén completas</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nombre <span class="cf">in</span> <span class="fu">names</span>(muestras)) {</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">dir.exists</span>(muestras[[nombre]])) {</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="st">"encontrada: "</span>, nombre, <span class="st">" -&gt; "</span>, muestras[[nombre]])</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">warning</span>(<span class="st">"no encontrada: "</span>, nombre, <span class="st">" -&gt; "</span>, muestras[[nombre]])</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH4_EXPT1_VEH_CD45 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736197</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH4_EXPT1_NIL_IDASA_CD45 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736198</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH4_EXPT2_VEH_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736199</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH4_EXPT2_NIL_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736200</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH4_EXPT2_NIL_IDASA_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736201</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH4_EXPT3_VEH_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736202</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH5_EXPT3_VEH_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736203</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH5_EXPT3_NIL_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736204</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>encontrada: COH5_EXPT3_NIL_IDASA_CD34 -&gt; ~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data/GSM6736205</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="paso-3.-leer-los-datos-con-read10x-y-crear-objetos-seurat" class="level2">
+<h2 class="anchored" data-anchor-id="paso-3.-leer-los-datos-con-read10x-y-crear-objetos-seurat">Paso 3. Leer los datos con Read10X y crear objetos Seurat</h2>
+<p>A diferencia del trabajo en clase, en donde ya teníamos una sola matriz consolidada de todo el estudio, aquí leeremos cada muestra por separado porque cada GSM es un experimento independiente de captura celular.</p>
+<p>Es importante mantener la identidad de cada muestra para hacer las comparaciones entre condiciones (VEH vs NIL+IDASA) y detectar posibles efectos batch.</p>
+<p><strong>Nota sobre el formato HDF5:</strong></p>
+<p>En la Práctica 1 fue necesario crear archivos HDF5 (.h5) como paso intermedio porque los datos del estudio venían en una única matriz consolidada para todos los pacientes, y era necesario separarlos por muestra antes de poder crear los objetos Seurat individuales.</p>
+<p>Sin embargo, en este caso no necesario porque los datos fueron descargados en el formato estándar de Cell Ranger: como anteriormente se mencionó, existe una carpeta independiente por muestra (GSM), cada una conteniendo sus propios archivos barcodes.tsv.gz, features.tsv.gz y matrix.mtx.gz. Y, con ayuda de la función Read10X() de Seurat es posible leer esta estructura directamente y producir exactamente la misma matriz de conteos que produciría Read10X_h5() si los datos estuvieran en formato HDF5. Por lo tanto, ambos flujos son equivalentes en resultado.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Leer cada muestra y para cada una crear su objeto seurat</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>seurat_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nombre <span class="cf">in</span> <span class="fu">names</span>(muestras)) {</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  ruta <span class="ot">&lt;-</span> muestras[[nombre]]</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">message</span>(<span class="st">"cargando muestra: "</span>, nombre)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Leer los tres archivos</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  counts <span class="ot">&lt;-</span> <span class="fu">Read10X</span>(<span class="at">data.dir =</span> ruta)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Crear objeto Seurat con los mismos umbrales que vimos en clase, donde:</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># min.cells = 3: un gen debe estar en al menos 3 células para incluirse</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># min.features = 200: una célula debe tener al menos 200 genes detectados</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  sobj <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">counts       =</span> counts,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">project      =</span> nombre,</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">min.cells    =</span> <span class="dv">3</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">min.features =</span> <span class="dv">200</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Metadatos de tratamiento ---</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Las 3 condiciones del diseño experimental, asegurarnos de mantener la</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># identidad</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">"VEH"</span>, nombre)) {</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    sobj<span class="sc">$</span>condition <span class="ot">&lt;-</span> <span class="st">"Vehicle"</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">"NIL_IDASA"</span>, nombre)) {</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    sobj<span class="sc">$</span>condition <span class="ot">&lt;-</span> <span class="st">"NIL_IDASA"</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">"NIL"</span>, nombre)) {</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>    sobj<span class="sc">$</span>condition <span class="ot">&lt;-</span> <span class="st">"Nilotinib"</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Tipo de población celular aislada ---</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># CD45+: panorama completo de células humanas (EXPT1)</span></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># CD34+: progenitores/LSC enriquecidas (EXPT2 y EXPT3)</span></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>  sobj<span class="sc">$</span>cell_type <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">grepl</span>(<span class="st">"CD45"</span>, nombre), <span class="st">"huCD45"</span>, <span class="st">"huCD34"</span>)</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Cohorte de pacientes ---</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>  <span class="co"># COH4 y COH5 — importante para controlar variabilidad</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>  sobj<span class="sc">$</span>cohort <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">grepl</span>(<span class="st">"COH4"</span>, nombre), <span class="st">"COH4"</span>, <span class="st">"COH5"</span>)</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Experimento de captura ---</span></span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>  <span class="co"># EXPT1, EXPT2, EXPT3 capturas independientes </span></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># IMPORTANTE para detectar efectos batch</span></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>  sobj<span class="sc">$</span>experiment <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">".*_(EXPT[0-9])_.*"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">1"</span>, nombre)</span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">message</span>(<span class="st">"  -&gt; "</span>, <span class="fu">ncol</span>(sobj), <span class="st">" células, "</span>, <span class="fu">nrow</span>(sobj), <span class="st">" genes"</span>)</span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>  seurat_list[[nombre]] <span class="ot">&lt;-</span> sobj</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<hr>
+</section>
+<section id="paso-4.-calcular-métricas-de-calidad-qc" class="level2">
+<h2 class="anchored" data-anchor-id="paso-4.-calcular-métricas-de-calidad-qc">Paso 4. Calcular métricas de calidad (QC)</h2>
+<p>Los <strong>genes mitocondriales</strong> <code>MT-</code>, son los que nos indican si una célula está dañada o en apoptosis. En el estudio se excluyen a células con &gt;20% de contenido mitocondrial en las células huCD45+ de PDX.</p>
+<p>Los <strong>genes ribosomales</strong> <code>^RP[SL]</code>, en este caso resultan ser relevantes en LMC porque en el estudió se observó upregulation de genes de proteínas ribosomales en LSC quiescentes (ESC-REGlow), lo que conecta con pluripotencia de células ES.</p>
+<p>Los <strong>genes de hemoglobina</strong> (<code>^HB</code>) dado a que las células de LSC humanas se aislaron de PDX es posible que haya ARN murino. Un alto porcentaje nos puede indicar contaminación.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nombre <span class="cf">in</span> <span class="fu">names</span>(seurat_list)) {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Genes mitocondriales ---</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  seurat_list[[nombre]] <span class="ot">&lt;-</span> <span class="fu">PercentageFeatureSet</span>(</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    seurat_list[[nombre]], </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">pattern  =</span> <span class="st">"^MT-"</span>, </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.name =</span> <span class="st">"percent_mito"</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Genes ribosomales ---</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  LSC quiescentes tienen alta expresión ribosomal</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  seurat_list[[nombre]] <span class="ot">&lt;-</span> <span class="fu">PercentageFeatureSet</span>(</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    seurat_list[[nombre]], </span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">pattern  =</span> <span class="st">"^RP[SL]"</span>, </span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.name =</span> <span class="st">"percent_ribo"</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Genes de hemoglobina ---</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  seurat_list[[nombre]] <span class="ot">&lt;-</span> <span class="fu">PercentageFeatureSet</span>(</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    seurat_list[[nombre]], </span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">pattern  =</span> <span class="st">"^HB[^(P|E|S)]"</span>, </span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.name =</span> <span class="st">"percent_hb"</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualizar resumen de QC para muestra 1</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(seurat_list[[<span class="dv">1</span>]]<span class="sc">@</span>meta.data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                            orig.ident nCount_RNA nFeature_RNA condition
+AAACCTGAGTGGTCCC-1 COH4_EXPT1_VEH_CD45       5547         1845   Vehicle
+AAACCTGCAGTCGTGC-1 COH4_EXPT1_VEH_CD45       4245         1667   Vehicle
+AAACCTGGTCAGCTAT-1 COH4_EXPT1_VEH_CD45      13738          682   Vehicle
+AAACCTGGTCTGCAAT-1 COH4_EXPT1_VEH_CD45       6100         2034   Vehicle
+AAACCTGTCTCGCTTG-1 COH4_EXPT1_VEH_CD45       4560          286   Vehicle
+AAACCTGTCTGGGCCA-1 COH4_EXPT1_VEH_CD45       1750          905   Vehicle
+                   cell_type cohort experiment percent_mito percent_ribo
+AAACCTGAGTGGTCCC-1    huCD45   COH4      EXPT1    6.4178835     7.175050
+AAACCTGCAGTCGTGC-1    huCD45   COH4      EXPT1    9.0223793    18.987044
+AAACCTGGTCAGCTAT-1    huCD45   COH4      EXPT1    0.1674188     4.498471
+AAACCTGGTCTGCAAT-1    huCD45   COH4      EXPT1    7.2295082    13.475410
+AAACCTGTCTCGCTTG-1    huCD45   COH4      EXPT1    0.0877193     1.140351
+AAACCTGTCTGGGCCA-1    huCD45   COH4      EXPT1    0.2285714    23.028571
+                   percent_hb
+AAACCTGAGTGGTCCC-1  0.0000000
+AAACCTGCAGTCGTGC-1  0.0000000
+AAACCTGGTCAGCTAT-1 76.3502693
+AAACCTGGTCTGCAAT-1  0.0000000
+AAACCTGTCTCGCTTG-1 85.7236842
+AAACCTGTCTGGGCCA-1  0.1142857</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="paso-5.-fusionar-todos-los-objetos-en-uno-solo" class="level2">
+<h2 class="anchored" data-anchor-id="paso-5.-fusionar-todos-los-objetos-en-uno-solo">Paso 5. Fusionar todos los objetos en uno solo</h2>
+<p>Para poder hacer un control de calidad y visualización comparativa entre las condiciones experimentales, fusionamos todas las muestras en un único objeto Seurat.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># primer objeto es la "base", los demás se añaden</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>primer_objeto <span class="ot">&lt;-</span> seurat_list[[<span class="dv">1</span>]]</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>resto_objetos  <span class="ot">&lt;-</span> seurat_list[<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>alldata <span class="ot">&lt;-</span> <span class="fu">merge</span>(</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">x           =</span> primer_objeto,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">y           =</span> resto_objetos,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">add.cell.ids =</span> <span class="fu">names</span>(seurat_list),  <span class="co"># se agrega prefijo del nombre de muestra a cada barcode</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">project     =</span> <span class="st">"GSE218185_CML"</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Limpiar memoria</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(seurat_list, primer_objeto, resto_objetos)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="fu">gc</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           used  (Mb) gc trigger  (Mb) max used  (Mb)
+Ncells  3686313 196.9    6759190 361.0  5767669 308.1
+Vcells 33473778 255.4   64891736 495.1 64891630 495.1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Verificar el objeto fusionado</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>alldata</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+17861 features across 13873 samples within 1 assay 
+Active assay: RNA (17861 features, 0 variable features)
+ 9 layers present: counts.COH4_EXPT1_VEH_CD45, counts.COH4_EXPT1_NIL_IDASA_CD45, counts.COH4_EXPT2_VEH_CD34, counts.COH4_EXPT2_NIL_CD34, counts.COH4_EXPT2_NIL_IDASA_CD34, counts.COH4_EXPT3_VEH_CD34, counts.COH5_EXPT3_VEH_CD34, counts.COH5_EXPT3_NIL_CD34, counts.COH5_EXPT3_NIL_IDASA_CD34</code></pre>
+</div>
+</div>
+<p>Visualizar la metadata:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(alldata<span class="sc">@</span>meta.data, <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                orig.ident nCount_RNA
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1 COH4_EXPT1_VEH_CD45       5547
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1 COH4_EXPT1_VEH_CD45       4245
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1 COH4_EXPT1_VEH_CD45      13738
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1 COH4_EXPT1_VEH_CD45       6100
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1 COH4_EXPT1_VEH_CD45       4560
+COH4_EXPT1_VEH_CD45_AAACCTGTCTGGGCCA-1 COH4_EXPT1_VEH_CD45       1750
+COH4_EXPT1_VEH_CD45_AAACGGGAGAGTAATC-1 COH4_EXPT1_VEH_CD45        817
+COH4_EXPT1_VEH_CD45_AAACGGGAGCCACGCT-1 COH4_EXPT1_VEH_CD45      15791
+COH4_EXPT1_VEH_CD45_AAACGGGCATCACCCT-1 COH4_EXPT1_VEH_CD45       2291
+COH4_EXPT1_VEH_CD45_AAACGGGGTTGCGCAC-1 COH4_EXPT1_VEH_CD45        668
+                                       nFeature_RNA condition cell_type cohort
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1         1845   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1         1667   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1          682   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1         2034   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1          286   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGTCTGGGCCA-1          905   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACGGGAGAGTAATC-1          575   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACGGGAGCCACGCT-1         2019   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACGGGCATCACCCT-1         1022   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACGGGGTTGCGCAC-1          423   Vehicle    huCD45   COH4
+                                       experiment percent_mito percent_ribo
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1      EXPT1   6.41788354    7.1750496
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1      EXPT1   9.02237927   18.9870436
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1      EXPT1   0.16741884    4.4984714
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1      EXPT1   7.22950820   13.4754098
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1      EXPT1   0.08771930    1.1403509
+COH4_EXPT1_VEH_CD45_AAACCTGTCTGGGCCA-1      EXPT1   0.22857143   23.0285714
+COH4_EXPT1_VEH_CD45_AAACGGGAGAGTAATC-1      EXPT1   2.20318237    0.3671971
+COH4_EXPT1_VEH_CD45_AAACGGGAGCCACGCT-1      EXPT1   0.09499082   19.8784118
+COH4_EXPT1_VEH_CD45_AAACGGGCATCACCCT-1      EXPT1   7.98777826   19.0746399
+COH4_EXPT1_VEH_CD45_AAACGGGGTTGCGCAC-1      EXPT1   9.13173653   11.5269461
+                                       percent_hb
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1  0.0000000
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1  0.0000000
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1 76.3502693
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1  0.0000000
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1 85.7236842
+COH4_EXPT1_VEH_CD45_AAACCTGTCTGGGCCA-1  0.1142857
+COH4_EXPT1_VEH_CD45_AAACGGGAGAGTAATC-1  0.1223990
+COH4_EXPT1_VEH_CD45_AAACGGGAGCCACGCT-1 38.4079539
+COH4_EXPT1_VEH_CD45_AAACGGGCATCACCCT-1  0.0000000
+COH4_EXPT1_VEH_CD45_AAACGGGGTTGCGCAC-1  0.0000000</code></pre>
+</div>
+</div>
+<p>¿Cuántas células hay por muestra?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(alldata<span class="sc">$</span>orig.ident)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+COH4_EXPT1_NIL_IDASA_CD45       COH4_EXPT1_VEH_CD45       COH4_EXPT2_NIL_CD34 
+                     1112                      1369                       542 
+COH4_EXPT2_NIL_IDASA_CD34       COH4_EXPT2_VEH_CD34       COH4_EXPT3_VEH_CD34 
+                      394                       350                      2750 
+      COH5_EXPT3_NIL_CD34 COH5_EXPT3_NIL_IDASA_CD34       COH5_EXPT3_VEH_CD34 
+                     2826                      2919                      1611 </code></pre>
+</div>
+</div>
+<p>¿Cuántas células hay por condición?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(alldata<span class="sc">$</span>condition)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+NIL_IDASA Nilotinib   Vehicle 
+     4425      3368      6080 </code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="paso-6.-visualización-gráfica-del-qc" class="level2">
+<h2 class="anchored" data-anchor-id="paso-6.-visualización-gráfica-del-qc">Paso 6. Visualización gráfica del QC</h2>
+<p>La visualización gŕafica del QC para evaluar la viabilidad celular y la calidad de secuenciación, usaremos <code>split.by = "condition"</code> para comparar las 3 condiciones de tratamiento.</p>
+<p>Este paso es muy importante porque:</p>
+<ol type="1">
+<li><p>La calidad puede variar según el injerto.</p></li>
+<li><p>El tratamiento con NIL+IDASA puede inducir apoptosis, por lo que, elevaría el porcentaje mitocondrial (sin embargo, es importante distinguirlo de los artefactos)<br>
+</p></li>
+</ol>
+<p><strong>Violinplots</strong></p>
+<ul>
+<li>nFeature_RNA y nCount_RNA</li>
+</ul>
+<p>La mayoría de las muestras presentan una distribución homogénea y esperada, con medianas que oscilan entre 1,000 y 2,500 genes detectados por célula (<code>nFeature_RNA</code>). Sin embargo, la muestra <strong><code>COH4_EXPT2_VEH_CD34</code></strong> tiene una distribución notablemente diferente al resto, ya que su violin es más ancho y se extiende hasta ~7,500 genes.</p>
+<p>Nuevamente la misma muestra destaca por tener 75,000 transcritos totales (<code>nCount_RNA</code>), mientras que el resto se mantiene por debajo de ~25,000. Este patrón podría ser un indicador de <strong>dobletes</strong>.</p>
+<ul>
+<li>percent_mito</li>
+</ul>
+<p>La mayoría de los grupos experimentales mantienen una proporción mitocondrial baja, la muestra <strong><code>COH4_EXPT2_NIL_IDASA_CD34</code></strong> presenta un ensanchamiento en su violín, con una gran proporción de su población celular superando el 10% y llegando hasta el 25% de expresión mitocondrial.Esto es <strong>biológicamente consistente,</strong> ya que la terapia combinada induce mayor estrés oxidativo en las células troncales leucemicas (LSC)</p>
+<ul>
+<li>percent_hb</li>
+</ul>
+<p>Algunas muestras contienen subpoblaciones celulares donde la expresión de genes de hemoglobina constituye casi el 100% de sus transcritos.Esto es una señal de alerta, ya que podría indicar contaminación por eritrocitos dado que las células humanas fueron extraídas directamente de la médula ósea de los ratones PDX.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>feats <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"nFeature_RNA"</span>, <span class="st">"nCount_RNA"</span>, <span class="st">"percent_mito"</span>, <span class="st">"percent_ribo"</span>, <span class="st">"percent_hb"</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  alldata, </span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by =</span> <span class="st">"orig.ident"</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">features =</span> feats, </span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">pt.size  =</span> <span class="fl">0.1</span>, </span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncol     =</span> <span class="dv">3</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="Entregable_SingleCell_files/figure-html/violinplot_qc-1.png" class="img-fluid figure-img" width="1344"></p>
+<figcaption><strong>Figura 7</strong>..Distribución de las métricas de control de calidad (QC).Los gráficos de violín muestran la distribución de cinco parámetros técnicos en las 9 réplicas biológicas del estudio.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong><br>
+Scatter plots</strong></p>
+<p>El gráfico de dispersión confirma la relación entre las métricas de secuenciación. Se puede observar una correlación negativa débil (<strong>-0.27</strong>) entre el porcentaje mitocondrial y los conteos totales, donde las gotas con muy pocos transcritos suelen ser restos celulares. Por otro lado, se observa una correlación positiva (<strong>0.81</strong>) entre <code>nCount_RNA</code> y <code>nFeature_RNA</code>, lo cual significa que existe una relación entre el número de moléculas de ARN que se capturaron y cuántos genes distintos se detectaron.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># nCount vs percent_mito: células con muchos conteos pero alto % mito son sospechosas</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>plot1 <span class="ot">&lt;-</span> <span class="fu">FeatureScatter</span>(</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  alldata, </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">feature1 =</span> <span class="st">"nCount_RNA"</span>, </span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">feature2 =</span> <span class="st">"percent_mito"</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by =</span> <span class="st">"orig.ident"</span>, </span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">pt.size  =</span> <span class="fl">0.5</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="co"># nCount vs nFeature: correlación esperada — si una célula tiene muchos UMIs,</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="co"># debería tener muchos genes distintos. </span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>plot2 <span class="ot">&lt;-</span> <span class="fu">FeatureScatter</span>(</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  alldata, </span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">feature1 =</span> <span class="st">"nCount_RNA"</span>, </span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">feature2 =</span> <span class="st">"nFeature_RNA"</span>,</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by =</span> <span class="st">"orig.ident"</span>, </span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">pt.size  =</span> <span class="fl">0.5</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>plot1 <span class="sc">+</span> plot2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="Entregable_SingleCell_files/figure-html/scatter_qc-1.png" class="img-fluid figure-img" width="1152"></p>
+<figcaption><strong>Figura 2</strong>.Correlación empírica entre las métricas de secuenciación.Gráficos de dispersión (FeatureScatter) que evalúan la relación bidimensional de las métricas de QC en la población total de células.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Número de células <strong>ANTES</strong> del filtrado:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total de células antes del filtrado:"</span>, <span class="fu">ncol</span>(alldata), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total de células antes del filtrado: 13873 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(alldata<span class="sc">$</span>orig.ident)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+COH4_EXPT1_NIL_IDASA_CD45       COH4_EXPT1_VEH_CD45       COH4_EXPT2_NIL_CD34 
+                     1112                      1369                       542 
+COH4_EXPT2_NIL_IDASA_CD34       COH4_EXPT2_VEH_CD34       COH4_EXPT3_VEH_CD34 
+                      394                       350                      2750 
+      COH5_EXPT3_NIL_CD34 COH5_EXPT3_NIL_IDASA_CD34       COH5_EXPT3_VEH_CD34 
+                     2826                      2919                      1611 </code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="paso-7.-filtrado-de-células-de-baja-calidad" class="level2">
+<h2 class="anchored" data-anchor-id="paso-7.-filtrado-de-células-de-baja-calidad">Paso 7. Filtrado de células de baja calidad</h2>
+<p>Los umbrales de filtrado están basados en:</p>
+<ol type="1">
+<li><p><strong><code>nFeature_RNA &gt; 200</code></strong>: Elimina “células” vacías o droplets vacíos.</p></li>
+<li><p><strong><code>nFeature_RNA &lt; 6000</code></strong>: Elimina dobletes (dos células capturadas juntas tienen el doble de genes). Específicamente para este análisis, al trabajar con <strong>células de médula ósea</strong> (progenitores hematopoyéticos CD34+ y LSC), suelen ser transcriptomicamente más complejas y en estados de diferenciación temprana se activan muchos programas genéticos simultáneamente. Por esta razón, usar 2,500 como límite eliminaría células biológicamente reales, ya que, por ejemplo un progrenitor CD34+ puede expresar entre 3,000 y 5,000 genes detectables.</p></li>
+<li><p><strong><code>percent_mito &lt; 20</code></strong>: En el estudio se usó &gt;20% de contenido mitocondrial como criterio de exclusión para células huCD45+/huCD34+ en PDX.</p></li>
+<li><p><strong><code>percent_ribo &lt; 50</code></strong>: Las LSC quiescentes tienen alta expresión de genes ribosomales, entonces un umbral bajo podría eliminar células biológicamente relevantes. Usamos 50% para conservar estas poblaciones.</p></li>
+</ol>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>data.filt <span class="ot">&lt;-</span> <span class="fu">subset</span>(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  alldata, </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">subset =</span> nFeature_RNA <span class="sc">&gt;</span> <span class="dv">200</span> <span class="sc">&amp;</span> </span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>           nFeature_RNA <span class="sc">&lt;</span> <span class="dv">6000</span> <span class="sc">&amp;</span> </span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>           percent_mito <span class="sc">&lt;</span> <span class="dv">20</span>  <span class="sc">&amp;</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>           percent_ribo <span class="sc">&lt;</span> <span class="dv">50</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Células ANTES del filtrado:"</span>, <span class="fu">ncol</span>(alldata), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Células ANTES del filtrado: 13873 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Células DESPUÉS del filtrado:"</span>, <span class="fu">ncol</span>(data.filt), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Células DESPUÉS del filtrado: 13647 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Células eliminadas:"</span>, <span class="fu">ncol</span>(alldata) <span class="sc">-</span> <span class="fu">ncol</span>(data.filt), <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Células eliminadas: 226 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Células por muestra después del filtrado</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(data.filt<span class="sc">$</span>orig.ident)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+COH4_EXPT1_NIL_IDASA_CD45       COH4_EXPT1_VEH_CD45       COH4_EXPT2_NIL_CD34 
+                     1107                      1325                       540 
+COH4_EXPT2_NIL_IDASA_CD34       COH4_EXPT2_VEH_CD34       COH4_EXPT3_VEH_CD34 
+                      341                       285                      2736 
+      COH5_EXPT3_NIL_CD34 COH5_EXPT3_NIL_IDASA_CD34       COH5_EXPT3_VEH_CD34 
+                     2824                      2915                      1574 </code></pre>
+</div>
+</div>
+<p>Visualizar el objeto filtrado:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>data.filt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+17861 features across 13647 samples within 1 assay 
+Active assay: RNA (17861 features, 0 variable features)
+ 9 layers present: counts.COH4_EXPT1_VEH_CD45, counts.COH4_EXPT1_NIL_IDASA_CD45, counts.COH4_EXPT2_VEH_CD34, counts.COH4_EXPT2_NIL_CD34, counts.COH4_EXPT2_NIL_IDASA_CD34, counts.COH4_EXPT3_VEH_CD34, counts.COH5_EXPT3_VEH_CD34, counts.COH5_EXPT3_NIL_CD34, counts.COH5_EXPT3_NIL_IDASA_CD34</code></pre>
+</div>
+</div>
+<p>Tenemos 17,861 genes detectados en 13,647 células.</p>
+<p><br>
+Ver metadata filtrada:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data.filt<span class="sc">@</span>meta.data, <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                orig.ident nCount_RNA
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1 COH4_EXPT1_VEH_CD45       5547
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1 COH4_EXPT1_VEH_CD45       4245
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1 COH4_EXPT1_VEH_CD45      13738
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1 COH4_EXPT1_VEH_CD45       6100
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1 COH4_EXPT1_VEH_CD45       4560
+                                       nFeature_RNA condition cell_type cohort
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1         1845   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1         1667   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1          682   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1         2034   Vehicle    huCD45   COH4
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1          286   Vehicle    huCD45   COH4
+                                       experiment percent_mito percent_ribo
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1      EXPT1    6.4178835     7.175050
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1      EXPT1    9.0223793    18.987044
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1      EXPT1    0.1674188     4.498471
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1      EXPT1    7.2295082    13.475410
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1      EXPT1    0.0877193     1.140351
+                                       percent_hb
+COH4_EXPT1_VEH_CD45_AAACCTGAGTGGTCCC-1    0.00000
+COH4_EXPT1_VEH_CD45_AAACCTGCAGTCGTGC-1    0.00000
+COH4_EXPT1_VEH_CD45_AAACCTGGTCAGCTAT-1   76.35027
+COH4_EXPT1_VEH_CD45_AAACCTGGTCTGCAAT-1    0.00000
+COH4_EXPT1_VEH_CD45_AAACCTGTCTCGCTTG-1   85.72368</code></pre>
+</div>
+</div>
+<p>¿Qué capas (layers) tenemos disponibles?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Layers</span>(data.filt, <span class="at">assay =</span> <span class="st">"RNA"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "counts.COH4_EXPT1_VEH_CD45"       "counts.COH4_EXPT1_NIL_IDASA_CD45"
+[3] "counts.COH4_EXPT2_VEH_CD34"       "counts.COH4_EXPT2_NIL_CD34"      
+[5] "counts.COH4_EXPT2_NIL_IDASA_CD34" "counts.COH4_EXPT3_VEH_CD34"      
+[7] "counts.COH5_EXPT3_VEH_CD34"       "counts.COH5_EXPT3_NIL_CD34"      
+[9] "counts.COH5_EXPT3_NIL_IDASA_CD34"</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="paso-8.-exploración-de-genes-más-abundantes" class="level2">
+<h2 class="anchored" data-anchor-id="paso-8.-exploración-de-genes-más-abundantes">Paso 8. Exploración de genes más abundantes</h2>
+<p>Para comprender la dinámica transcripcional de nuestras muestras antes de realizar cualquier agrupamiento celular, es importante hacer una exploración global de los genes que dominan el transcriptoma, para posteriormente hacer una exploración dirigida hacia alguna firma molecular específica reportada de esta enfermedad.</p>
+<section id="cuántas-lecturas-totales-tiene-cada-gen-en-cada-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="cuántas-lecturas-totales-tiene-cada-gen-en-cada-dataset">¿Cuántas lecturas totales tiene cada gen en cada dataset?</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Obtenemos el nombre de todas las capas en el assay "RNA"</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>capas_disponibles <span class="ot">&lt;-</span> <span class="fu">Layers</span>(data.filt, <span class="at">assay =</span> <span class="st">"RNA"</span>)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Filtramos y unicamentenos quedamos con las capas de conteos puros ("counts")</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>capas_conteos <span class="ot">&lt;-</span> capas_disponibles[<span class="fu">grepl</span>(<span class="st">"counts"</span>, capas_disponibles)]</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Extraemos la matriz de cada capa (preserva los rownames correctos)</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>cell_counts <span class="ot">&lt;-</span> <span class="fu">lapply</span>(capas_conteos, <span class="cf">function</span>(capa) {</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">LayerData</span>(data.filt, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">layer =</span> capa)</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Asignarle los nombres de las muestras a la lista para no perder la organizacion</span></span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(cell_counts) <span class="ot">&lt;-</span> capas_conteos</span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Total de lecturas por gen en cada dataset</span></span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>gene_totals <span class="ot">&lt;-</span> <span class="fu">lapply</span>(cell_counts, <span class="cf">function</span>(mat) {</span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowSums</span>(mat)</span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Top 10 genes más abundantes por dataset</span></span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a>top_genes <span class="ot">&lt;-</span> <span class="fu">lapply</span>(gene_totals, <span class="cf">function</span>(x) {</span>
+<span id="cb45-22"><a href="#cb45-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sort</span>(x, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb45-23"><a href="#cb45-23" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb45-24"><a href="#cb45-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-25"><a href="#cb45-25" aria-hidden="true" tabindex="-1"></a>top_genes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$counts.COH4_EXPT1_VEH_CD45
+   HBB S100A8   ACTB    LYZ MT-CO1 MALAT1 TMSB4X MT-CO2   CD74    FTL 
+844020 128659 105913 103353  61622  61193  56754  56566  55743  52748 
+
+$counts.COH4_EXPT1_NIL_IDASA_CD45
+   HBB MALAT1   FTH1   ACTB MT-CO2 MT-CO1 S100A6 TMSB4X   HPGD EEF1A1 
+188593  86275  37635  28693  25853  19405  18554  17616  16183  14682 
+
+$counts.COH4_EXPT2_VEH_CD34
+MALAT1    HBB MT-CO1   SRGN MT-CO2  RPLP1 EEF1A1  RPL41   ACTB MT-CO3 
+ 33121  25969  22093  20316  20090  17944  16877  16192  15867  14148 
+
+$counts.COH4_EXPT2_NIL_CD34
+   HBB MALAT1   FTH1 TMSB4X   ACTB    LYZ    FTL MT-CO2 MT-CO1 EEF1A1 
+211012  36829  18824  18377  18140  16714  16357  10386   8856   8761 
+
+$counts.COH4_EXPT2_NIL_IDASA_CD34
+   HBB MALAT1   FTH1 MT-CO1 MT-CYB MT-CO2   HPGD   ACTB EEF1A1    FTL 
+ 95319  52999  13356  12655  11183  10001   8931   7013   5360   5297 
+
+$counts.COH4_EXPT3_VEH_CD34
+     HBB   MALAT1      FTL      LYZ     FTH1   TMSB4X     ACTB   S100A8 
+ 1488398   265041   205449   201681   189410   136851   136684   105768 
+HIST3H2A   S100A6 
+   83048    74793 
+
+$counts.COH5_EXPT3_VEH_CD34
+    HBB  MALAT1    FTH1    HBA1  MT-CO2    ACTB     FTL  MT-CO1    HPGD     LYZ 
+1184073  230960   90752   57327   53523   50745   49964   46413   38534   37496 
+
+$counts.COH5_EXPT3_NIL_CD34
+    HBB  MALAT1    FTH1     LYZ    ACTB  TMSB4X     FTL  S100A6    HPGD    HBA1 
+2103162  176573  119597   78974   78479   74435   68955   48973   44849   44319 
+
+$counts.COH5_EXPT3_NIL_IDASA_CD34
+     HBB   MALAT1     FTH1     HBA1   TMSB4X      LYZ      FTL     ACTB 
+ 2894734   134635   116533    91428    80582    79564    72420    70155 
+HIST3H2A   S100A6 
+   46013    45212 </code></pre>
+</div>
+</div>
+</section>
+<section id="cuántas-células-expresan-cada-gen" class="level3">
+<h3 class="anchored" data-anchor-id="cuántas-células-expresan-cada-gen">¿Cuántas células expresan cada gen?</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>expr_cells <span class="ot">&lt;-</span> <span class="fu">lapply</span>(cell_counts, <span class="cf">function</span>(mat) {</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  cells_per_gene <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(mat <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(cells_per_gene) <span class="ot">&lt;-</span> <span class="fu">rownames</span>(mat)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  cells_per_gene</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="heatmap-de-top-genes" class="level3">
+<h3 class="anchored" data-anchor-id="heatmap-de-top-genes">Heatmap de top genes</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reshape2)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>df_expr <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">names</span>(expr_cells), <span class="cf">function</span>(name) {</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">dataset =</span> name,</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">gene    =</span> <span class="fu">names</span>(expr_cells[[name]]),</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">cells   =</span> expr_cells[[name]]</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>}))</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>df_top <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">names</span>(top_genes), <span class="cf">function</span>(name) {</span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>  genes <span class="ot">&lt;-</span> <span class="fu">names</span>(top_genes[[name]])</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">dataset =</span> name,</span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">gene    =</span> genes,</span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">cells   =</span> expr_cells[[name]][genes]</span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>}))</span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_top, <span class="fu">aes</span>(<span class="at">x =</span> dataset, <span class="at">y =</span> gene, <span class="at">fill =</span> cells)) <span class="sc">+</span></span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>(<span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low =</span> <span class="st">"white"</span>, <span class="at">high =</span> <span class="st">"darkred"</span>) <span class="sc">+</span></span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Número de células que expresan los top genes por condición"</span>,</span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Dataset: GSE218185"</span>,</span>
+<span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Dataset / Muestra"</span>,</span>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Gen"</span>,</span>
+<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"# células"</span></span>
+<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="Entregable_SingleCell_files/figure-html/heatmap_top_genes-1.png" class="img-fluid figure-img" width="960"></p>
+<figcaption><strong>Figura 3</strong>.Distribución celular de los transcritos globales más abundantes. Mapa de calor (heatmap) que ilustra el número de células individuales con expresión detectable (UMIs &gt; 0) para los genes con mayor cantidad de lecturas absolutas en el dataset. Las columnas representan cada una de las 9 réplicas biológicas evaluadas, mientras que las filas conforman el panel consolidado de los genes Top 10 más expresados por muestra. La intensidad del color es proporcional a la cantidad de células que expresan el gen..</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretación biológica de los transcritos dominantes</strong></p>
+<p>Al evaluar los genes más abundantes y su distribución celular en el mapa de calor, se identifican puede concluir lo siguiente:</p>
+<p><u>1.</u> <strong>Confirmación del aislamiento celular (CD45+ vs CD34+)</strong>: Se observa una clara división transcripcional entre los grupos. Los marcadores característicos de células inmunitarias maduras están presentes en las muestras (CD45+), pero desaparecen en las fracciones enriquecidas (CD34+).</p>
+<p><u>2.</u> <strong>Influencia del microambiente (Médula Ósea):</strong> Se visualiza una dominancia de genes eritroides (como la hemoglobina y ferritina) en casi todas las muestras es una firma biológica esperada, ya que refleja el nicho anatómico de donde se extrajeron las células.</p>
+<p><u>3.</u> <strong>Genes ubicuos y la necesidad de control técnico:</strong> Por otro lado, se observan transcritos constitutivos (estructurales) y de fuerte retención nuclear, como el lncRNA <strong>MALAT1</strong>, por lo que es necesario tenerlo en cuenta para descartar que las señales provengan de células lisadas.</p>
+<hr>
+</section>
+</section>
+<section id="paso-9.-análisis-del-lncrna-malat1" class="level2">
+<h2 class="anchored" data-anchor-id="paso-9.-análisis-del-lncrna-malat1">Paso 9. Análisis del lncRNA MALAT1</h2>
+<p>El gen <em>MALAT1</em> (<em>Metastasis Associated Lung Adenocarcinoma Transcript 1</em>), también conocido como <em>NEAT2</em>, codifica para un ARN largo no codificante (lncRNA) que se localiza en los dominios nucleares denominados <em>speckles</em>. Su función principal se centra en la regulación de la expresión génica a nivel de splicing y transcripción.</p>
+<p>MALAT1 se utiliza como biomarcador de calidad técnica, ya que al ser un transcrito de retención nuclear, un exceso de sus lecturas (típicamente &gt;20% de los UMIs totales de una célula) sugiere que la membrana celular sufrió una lisis parcial durante el procesamiento.</p>
+<section id="porcentaje-de-umis-de-malat1-por-célula" class="level3">
+<h3 class="anchored" data-anchor-id="porcentaje-de-umis-de-malat1-por-célula">Porcentaje de UMIs de MALAT1 por célula</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>malat1_percent <span class="ot">&lt;-</span> <span class="fu">lapply</span>(cell_counts, <span class="cf">function</span>(mat) {</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="st">"MALAT1"</span> <span class="sc">%in%</span> <span class="fu">rownames</span>(mat)) {</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    gene_counts  <span class="ot">&lt;-</span> mat[<span class="st">"MALAT1"</span>, ]</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    total_counts <span class="ot">&lt;-</span> <span class="fu">colSums</span>(mat)</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">100</span> <span class="sc">*</span> gene_counts <span class="sc">/</span> total_counts</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">warning</span>(<span class="st">"MALAT1 no encontrado en esta muestra"</span>)</span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>    <span class="cn">NULL</span></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="células-con-20-de-umis-de-malat1" class="level3">
+<h3 class="anchored" data-anchor-id="células-con-20-de-umis-de-malat1">Células con &gt;20% de UMIs de MALAT1</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>malat1_summary <span class="ot">&lt;-</span> <span class="fu">lapply</span>(malat1_percent, <span class="cf">function</span>(pct) {</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(pct)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  total_cells  <span class="ot">&lt;-</span> <span class="fu">length</span>(pct)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  cells_above  <span class="ot">&lt;-</span> <span class="fu">sum</span>(pct <span class="sc">&gt;</span> <span class="dv">20</span>)</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  percent_cells <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> cells_above <span class="sc">/</span> total_cells</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_cells   =</span> total_cells,</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">cells_above   =</span> cells_above,</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">percent_cells =</span> <span class="fu">round</span>(percent_cells, <span class="dv">2</span>)</span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>malat1_summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$counts.COH4_EXPT1_VEH_CD45
+$counts.COH4_EXPT1_VEH_CD45$total_cells
+[1] 1325
+
+$counts.COH4_EXPT1_VEH_CD45$cells_above
+[1] 8
+
+$counts.COH4_EXPT1_VEH_CD45$percent_cells
+[1] 0.6
+
+
+$counts.COH4_EXPT1_NIL_IDASA_CD45
+$counts.COH4_EXPT1_NIL_IDASA_CD45$total_cells
+[1] 1107
+
+$counts.COH4_EXPT1_NIL_IDASA_CD45$cells_above
+[1] 10
+
+$counts.COH4_EXPT1_NIL_IDASA_CD45$percent_cells
+[1] 0.9
+
+
+$counts.COH4_EXPT2_VEH_CD34
+$counts.COH4_EXPT2_VEH_CD34$total_cells
+[1] 285
+
+$counts.COH4_EXPT2_VEH_CD34$cells_above
+[1] 3
+
+$counts.COH4_EXPT2_VEH_CD34$percent_cells
+[1] 1.05
+
+
+$counts.COH4_EXPT2_NIL_CD34
+$counts.COH4_EXPT2_NIL_CD34$total_cells
+[1] 540
+
+$counts.COH4_EXPT2_NIL_CD34$cells_above
+[1] 2
+
+$counts.COH4_EXPT2_NIL_CD34$percent_cells
+[1] 0.37
+
+
+$counts.COH4_EXPT2_NIL_IDASA_CD34
+$counts.COH4_EXPT2_NIL_IDASA_CD34$total_cells
+[1] 341
+
+$counts.COH4_EXPT2_NIL_IDASA_CD34$cells_above
+[1] 11
+
+$counts.COH4_EXPT2_NIL_IDASA_CD34$percent_cells
+[1] 3.23
+
+
+$counts.COH4_EXPT3_VEH_CD34
+$counts.COH4_EXPT3_VEH_CD34$total_cells
+[1] 2736
+
+$counts.COH4_EXPT3_VEH_CD34$cells_above
+[1] 44
+
+$counts.COH4_EXPT3_VEH_CD34$percent_cells
+[1] 1.61
+
+
+$counts.COH5_EXPT3_VEH_CD34
+$counts.COH5_EXPT3_VEH_CD34$total_cells
+[1] 1574
+
+$counts.COH5_EXPT3_VEH_CD34$cells_above
+[1] 5
+
+$counts.COH5_EXPT3_VEH_CD34$percent_cells
+[1] 0.32
+
+
+$counts.COH5_EXPT3_NIL_CD34
+$counts.COH5_EXPT3_NIL_CD34$total_cells
+[1] 2824
+
+$counts.COH5_EXPT3_NIL_CD34$cells_above
+[1] 9
+
+$counts.COH5_EXPT3_NIL_CD34$percent_cells
+[1] 0.32
+
+
+$counts.COH5_EXPT3_NIL_IDASA_CD34
+$counts.COH5_EXPT3_NIL_IDASA_CD34$total_cells
+[1] 2915
+
+$counts.COH5_EXPT3_NIL_IDASA_CD34$cells_above
+[1] 4
+
+$counts.COH5_EXPT3_NIL_IDASA_CD34$percent_cells
+[1] 0.14</code></pre>
+</div>
+</div>
+</section>
+<section id="porcentaje-global" class="level3">
+<h3 class="anchored" data-anchor-id="porcentaje-global">Porcentaje global</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>total_cells_all <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">sapply</span>(malat1_summary, <span class="cf">function</span>(x) <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(x)) x<span class="sc">$</span>total_cells <span class="cf">else</span> <span class="dv">0</span>))</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>cells_above_all <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">sapply</span>(malat1_summary, <span class="cf">function</span>(x) <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(x)) x<span class="sc">$</span>cells_above <span class="cf">else</span> <span class="dv">0</span>))</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>percent_global  <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> cells_above_all <span class="sc">/</span> total_cells_all</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Porcentaje global de células con MALAT1 &gt; 20% de UMIs:"</span>, <span class="fu">round</span>(percent_global, <span class="dv">2</span>), <span class="st">"%</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Porcentaje global de células con MALAT1 &gt; 20% de UMIs: 0.7 %</code></pre>
+</div>
+</div>
+<p><br>
+La evaluación de los niveles de <strong><em>MALAT1</em></strong> a lo largo de las 9 réplicas biológicas a nivel general, únicamente el <strong>0.7%</strong> del total de las células supera el umbral crítico del 20% de UMIs dedicados a <strong><em>MALAT1</em></strong>, por lo que, el dataset está libre de sesgos técnicos por daño de membrana y en condiciones óptimas para las fases de reducción de dimensionalidad (PCA).</p>
+<hr>
+</section>
+</section>
+<section id="paso-10.-normalización-de-los-datos" class="level2">
+<h2 class="anchored" data-anchor-id="paso-10.-normalización-de-los-datos">Paso 10. Normalización de los datos</h2>
+<p>La normalización con <code>NormalizeData()</code> aplica la normalización estándar de Seurat: para cada célula, divide el conteo de cada gen entre el total de conteos de esa célula, multiplica por un factor de escala (10,000 por defecto, y luego aplica una transformación logarítmica (<code>log1p</code>). Esto corrige por diferencias en profundidad de secuenciación entre células.</p>
+<p>En el estudio se menciona específicamente que se procesaron los datos con Cell Ranger seguido de Seurat con <code>LogNormalize</code> y <code>scale.factor = 10000</code>, exactamente el default de <code>NormalizeData()</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>pbmc <span class="ot">&lt;-</span> <span class="fu">NormalizeData</span>(data.filt, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Verificar que ahora tenemos la capa 'data' (normalizada) además de 'counts'</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Layers</span>(pbmc, <span class="at">assay =</span> <span class="st">"RNA"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "counts.COH4_EXPT1_VEH_CD45"       "counts.COH4_EXPT1_NIL_IDASA_CD45"
+ [3] "counts.COH4_EXPT2_VEH_CD34"       "counts.COH4_EXPT2_NIL_CD34"      
+ [5] "counts.COH4_EXPT2_NIL_IDASA_CD34" "counts.COH4_EXPT3_VEH_CD34"      
+ [7] "counts.COH5_EXPT3_VEH_CD34"       "counts.COH5_EXPT3_NIL_CD34"      
+ [9] "counts.COH5_EXPT3_NIL_IDASA_CD34" "data.COH4_EXPT1_VEH_CD45"        
+[11] "data.COH4_EXPT1_NIL_IDASA_CD45"   "data.COH4_EXPT2_VEH_CD34"        
+[13] "data.COH4_EXPT2_NIL_CD34"         "data.COH4_EXPT2_NIL_IDASA_CD34"  
+[15] "data.COH4_EXPT3_VEH_CD34"         "data.COH5_EXPT3_VEH_CD34"        
+[17] "data.COH5_EXPT3_NIL_CD34"         "data.COH5_EXPT3_NIL_IDASA_CD34"  </code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="paso-11.-guardar-el-objeto-seurat" class="level2">
+<h2 class="anchored" data-anchor-id="paso-11.-guardar-el-objeto-seurat">Paso 11. Guardar el objeto Seurat</h2>
+<p>Una vez que guardamos el objeto, el cual contiene:</p>
+<ol type="1">
+<li><p><code>counts</code> — datos crudos</p></li>
+<li><p><code>data</code> — datos normalizados</p></li>
+<li><p><code>metadata</code> — datos de QC</p></li>
+</ol>
+<p>Tenemos lo necesario para los siguientes análisis: selección de genes variables, reducción de dimensionalidad (PCA), UMAP, y clustering</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Crear carpeta output si no existe</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(<span class="st">"output"</span>)) <span class="fu">dir.create</span>(<span class="st">"output"</span>)</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(pbmc, <span class="at">file =</span> <span class="st">"output/GSE218185_CML_normalized.rds"</span>)</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Objeto guardado en: output/GSE218185_CML_normalized.rds</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Objeto guardado en: output/GSE218185_CML_normalized.rds</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"El objeto contiene:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>El objeto contiene:</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"  - Células totales:"</span>, <span class="fu">ncol</span>(pbmc), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  - Células totales: 13647 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"  - Genes totales:"</span>, <span class="fu">nrow</span>(pbmc), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  - Genes totales: 17861 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"  - Capas disponibles:"</span>, <span class="fu">paste</span>(<span class="fu">Layers</span>(pbmc), <span class="at">collapse =</span> <span class="st">", "</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  - Capas disponibles: counts.COH4_EXPT1_VEH_CD45, counts.COH4_EXPT1_NIL_IDASA_CD45, counts.COH4_EXPT2_VEH_CD34, counts.COH4_EXPT2_NIL_CD34, counts.COH4_EXPT2_NIL_IDASA_CD34, counts.COH4_EXPT3_VEH_CD34, counts.COH5_EXPT3_VEH_CD34, counts.COH5_EXPT3_NIL_CD34, counts.COH5_EXPT3_NIL_IDASA_CD34, data.COH4_EXPT1_VEH_CD45, data.COH4_EXPT1_NIL_IDASA_CD45, data.COH4_EXPT2_VEH_CD34, data.COH4_EXPT2_NIL_CD34, data.COH4_EXPT2_NIL_IDASA_CD34, data.COH4_EXPT3_VEH_CD34, data.COH5_EXPT3_VEH_CD34, data.COH5_EXPT3_NIL_CD34, data.COH5_EXPT3_NIL_IDASA_CD34 </code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="resumen-del-flujo-de-trabajo" class="level2">
+<h2 class="anchored" data-anchor-id="resumen-del-flujo-de-trabajo">Resumen del flujo de trabajo</h2>
+<pre><code>Carpetas GSM (barcodes + features + matrix)
+         ↓
+    Read10X() por muestra
+         ↓
+  CreateSeuratObject() → metadata de condición y tipo celular
+         ↓
+    merge() → un solo objeto alldata
+         ↓
+ PercentageFeatureSet() → percent_mito, percent_ribo, percent_hb
+         ↓
+  VlnPlot() + FeatureScatter() → visualización QC
+         ↓
+    subset() → filtrado (nFeature 200-6000, mito &lt;20%, ribo &lt;50%)
+         ↓
+  Exploración de top genes y MALAT1
+         ↓
+   NormalizeData() → normalización log(CP10K)
+         ↓
+  saveRDS() → objeto listo para clustering</code></pre>
+<hr>
+</section>
+<section id="referencias" class="level2">
+<h2 class="anchored" data-anchor-id="referencias">Referencias</h2>
+<ul>
+<li>Información del dataset de <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE218185">GEO GSE218185</a></li>
+<li>Scott MT et al.&nbsp;<em>Nat Commun</em> 2024;15:651. DOI: 10.1038/s41467-024-44771-9</li>
+<li><a href="https://satijalab.org/seurat/articles/pbmc3k_tutorial">Seurat — Guided Clustering Tutorial</a></li>
+<li>Práctica 1: COVID-19 vs healthy (GSE149689) — Curso Bioinformática LCG</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

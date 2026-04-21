@@ -1,0 +1,617 @@
+---
+title: "Análisis scRNA-seq: Efecto de Idasanutlin y Nilotinib en LMC"
+subtitle: "Control de calidad y normalización de los datos"
+author: "Paola Albarrán Godoy, Yael Daniel Hernández González"
+date: 04/14/2026
+format: html
+editor: visual
+---
+
+## Descripción de los datos
+
+### **Información general**
+
+-   **Título del estudio:** Single cell RNA-seq analysis of the effects of idasanutlin and/or nilotinib on primary human CML cells engrafted into the bone marrow of immunocompromised mice
+-   **Especie:** *Homo sapiens*.
+-   **Número de acceso GEO:** [GSE218185](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE218185)
+-   **Tipo de experimento:** scRNA-seq (Expression profiling by high throughput sequencing).
+-   **Publicado:** 19 Dic 2023
+-   **Artículo relacionado:** Scott MT, Liu W, Mitchell R, Clarke CJ et al. Activating p53 abolishes self-renewal of quiescent leukaemic stem cells in residual CML disease. Nat Commun 2024 Jan 22;15(1):651. PMID: [38246924](https://www.ncbi.nlm.nih.gov/pubmed/38246924 "Link to PubMed record")\
+
+### Contexto biológico
+
+La Leucemia Mieloide Crónica (LMC) es una neoplasia mieloproliferativa originada por la fusión de los genes BCR::ABL1, la cual produce una oncoproteína responsable de la proliferación descontrolada de la línea mieloide. A pesar del éxito de los inhibidores de tirosina cinasa (TKI) como el **nilotinib (NIL)**, que permiten un control parcial de la enfermedad, su erradicación aún sigue siendo un desafío. Las células madre leucémicas (LSC) quiescentes persisten como enfermedad residual que, cuando se suspende el tratamiento son las principales responsable reactivar la leucemia.
+
+El paper asociado (Scott et al., *Nature Communications*, 2024) observó que las LSC quiescentes comparten redes regulatorias con células madre embrionarias (ES), incluyendo niveles bajos de p53 que les permiten preservar su capacidad de autorrenovación. Por lo que, la hipótesis es que la reactivación de p53 aboliría la autorrenovación de las LSC.
+
+### Diseño experimental
+
+Se empleó un modelo in vivo de xenoinjerto derivado de paciente (**PDX**). Para ello, se utilizaron ratones inmunodeprimidos (**NSG/NRG**) injertados con células primarias de LMC (**CD34+, p53 WT**). Posteriormente, el análisis de la respuesta al tratamiento, se hizo mediante scRNA-seq en células **(huCD45+ o huCD34+**) aisladas de su médula ósea.
+
+La respuesta al tratamiento se evaluó comparando los siguientes grupos:
+
+1.  **Vehículo (VEH):** Grupo control sin fármacos activos.
+
+2.  **Nilotinib (NIL):** Tratamiento exclusivo con TKI durante 28 días.
+
+3.  **Nilotinib + Idasanutlin (NIL+IDASA):** Tratamiento combinado donde se administró NIL (TKI) junto con IDASA. *Nota: Tras la fase de tratamiento, los animales entraron en un periodo libre de fármacos de 28 días para evaluar el agotamiento a largo plazo de las LSC.*
+
+\
+Aunque el estudio utilizó una cohorte total de 46 ratones para análisis de citometría (26 en COH4 y 20 en COH5), el análisis de **scRNA-seq** se centró en una selección representativa de réplicas biológicas:
+
+1.  **Cohorte 4 (fin del tratamiento):** Las células se recolectaron inmediatamente tras finalizar los 28 días de tratamiento. Para el análisis de scRNA-seq se seleccionaron un total de **6 muestras**.
+2.  **Cohorte 5 (periodo libre de tratamiento):** Se procesaron **3 muestras** adicionales para el analisis de scRNA-seq, para representar la persistencia de las células troncales.
+
+### **Resultados del artículo:**
+
+La similitud molecular de las LSC quiescentes y las células embrionarias (ES), denominada ESC-REG, es dependiente de BCR::ABL1 y está enriquecida para las redes transcripcionales de c-MYC y Nanog. Los autores inhibieron la proteína MDM2, la cual es responsable de degradar a p53 con el fármaco **idasanutlin (IDASA)** y en combinación con NIL, observaron una reducción en su capacidad de formación de colonias (CFC) y un agotamiento progresivo de las células LSC quiescentes una vez que el tratamiento fue suspendido, confirmando la pérdida de la capacidad de autorrenovación.
+
+------------------------------------------------------------------------
+
+## Paso 1. Cargar paquetes
+
+```{r paquetes, message=FALSE, warning=FALSE}
+library(Matrix)       
+library(Seurat)        # Principal para análisis de scRNA-seq
+library(dplyr)         
+library(ggplot2)       
+library(patchwork)     # Combinar gráficos
+library(DoubletFinder) 
+```
+
+------------------------------------------------------------------------
+
+## Paso 2. Definir estructura de muestras
+
+Cada muestra GSM tiene su propia carpeta con los tres archivos de 10X Genomics
+
+1.  `barcodes.tsv.gz:` Contiene los identificadores únicos correspondientes a cada célula capturada. Definirá los nombres de las **columnas** de la matriz de expresión.
+
+2.  `features.tsv.gz:` Contiene la lista de todos los genes anotados. Este archivo define los nombres de las **filas** de la matriz de expresión.
+
+3.  `matrix.mtx.gz`: Contiene los valores numéricos crudos, es decir, la cantidad exacta de transcritos (UMIs) que se detectaron para cada gen dentro de cada célula.
+
+Como anteriormente se mencionó, el diseño tiene **3 condiciones experimentales** (VEH, NIL, NIL+IDASA), junto con **2 estrategias de aislamiento** (CD45+, CD34+) para capturar distintos niveles de resolución biológica.
+
+-   **huCD45+** nos permite ver el **panorama completo** del sistema hematopoyético humano: células maduras mieloides, progenitores y LSC al mismo tiempo.
+
+-   **huCD34+** es un marcador de células progenitoras primitivas que enriquece específicamente para las **células madre leucémicas (LSC)** y progenitores tempranos.
+
+![Información suplementaria encontrada en GEO para el GSE218185.](images/InformaciónSuplementaria.png){fig-alt="Información suplementaria encontrada en GEO para el GSE218185."}
+
+```{r estructura_muestras}
+base_dir <- "~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data"
+# Tres experimentos de captura scRNA-seq:
+#   EXPT1: células huCD45+ (panorama completo)
+#   EXPT2: células huCD34+ de COH4 (LSC enriquecidas)
+#   EXPT3: células huCD34+ de COH4 y COH5 
+
+muestras <- list(
+  # EXPT1: huCD45+ — COH4 
+  # VEH, NIL+IDASA
+  "COH4_EXPT1_VEH_CD45"       = file.path(base_dir, "GSM6736197"),
+  "COH4_EXPT1_NIL_IDASA_CD45" = file.path(base_dir, "GSM6736198"),
+
+  # EXPT2: huCD34+ — COH4 
+  # VEH, NIL, NILNIL+IDASA
+  "COH4_EXPT2_VEH_CD34"       = file.path(base_dir, "GSM6736199"),
+  "COH4_EXPT2_NIL_CD34"       = file.path(base_dir, "GSM6736200"),
+  "COH4_EXPT2_NIL_IDASA_CD34" = file.path(base_dir, "GSM6736201"),
+
+  # EXPT3: huCD34+ — COH4 y COH5 
+  # GSM6736202: COH4 VEH
+  # GSM6736203-205: COH5 VEH, NIL, NILNIL+IDASA
+  "COH4_EXPT3_VEH_CD34"       = file.path(base_dir, "GSM6736202"),
+  "COH5_EXPT3_VEH_CD34"       = file.path(base_dir, "GSM6736203"),
+  "COH5_EXPT3_NIL_CD34"       = file.path(base_dir, "GSM6736204"),
+  "COH5_EXPT3_NIL_IDASA_CD34" = file.path(base_dir, "GSM6736205")
+)
+
+# Verificar que todas mis carpetas estén completas
+for (nombre in names(muestras)) {
+  if (dir.exists(muestras[[nombre]])) {
+    message("encontrada: ", nombre, " -> ", muestras[[nombre]])
+  } else {
+    warning("no encontrada: ", nombre, " -> ", muestras[[nombre]])
+  }
+}
+```
+
+------------------------------------------------------------------------
+
+## Paso 3. Leer los datos con Read10X y crear objetos Seurat
+
+A diferencia del trabajo en clase, en donde ya teníamos una sola matriz consolidada de todo el estudio, aquí leeremos cada muestra por separado porque cada GSM es un experimento independiente de captura celular.
+
+Es importante mantener la identidad de cada muestra para hacer las comparaciones entre condiciones (VEH vs NIL+IDASA) y detectar posibles efectos batch.
+
+**Nota sobre el formato HDF5:**
+
+En la Práctica 1 fue necesario crear archivos HDF5 (.h5) como paso intermedio porque los datos del estudio venían en una única matriz consolidada para todos los pacientes, y era necesario separarlos por muestra antes de poder crear los objetos Seurat individuales.
+
+Sin embargo, en este caso no necesario porque los datos fueron descargados en el formato estándar de Cell Ranger: como anteriormente se mencionó, existe una carpeta independiente por muestra (GSM), cada una conteniendo sus propios archivos barcodes.tsv.gz, features.tsv.gz y matrix.mtx.gz. Y, con ayuda de la función Read10X() de Seurat es posible leer esta estructura directamente y producir exactamente la misma matriz de conteos que produciría Read10X_h5() si los datos estuvieran en formato HDF5. Por lo tanto, ambos flujos son equivalentes en resultado.
+
+```{r leer_datos, message=FALSE, warning=FALSE}
+# Leer cada muestra y para cada una crear su objeto seurat
+seurat_list <- list()
+
+for (nombre in names(muestras)) {
+  ruta <- muestras[[nombre]]
+  
+  message("cargando muestra: ", nombre)
+  
+  # Leer los tres archivos
+  counts <- Read10X(data.dir = ruta)
+  
+  # Crear objeto Seurat con los mismos umbrales que vimos en clase, donde:
+  # min.cells = 3: un gen debe estar en al menos 3 células para incluirse
+  # min.features = 200: una célula debe tener al menos 200 genes detectados
+  sobj <- CreateSeuratObject(
+    counts       = counts,
+    project      = nombre,
+    min.cells    = 3,
+    min.features = 200
+  )
+  
+  # --- Metadatos de tratamiento ---
+  # Las 3 condiciones del diseño experimental, asegurarnos de mantener la
+  # identidad
+  if (grepl("VEH", nombre)) {
+    sobj$condition <- "Vehicle"
+  } else if (grepl("NIL_IDASA", nombre)) {
+    sobj$condition <- "NIL_IDASA"
+  } else if (grepl("NIL", nombre)) {
+    sobj$condition <- "Nilotinib"
+  }
+
+  # --- Tipo de población celular aislada ---
+  # CD45+: panorama completo de células humanas (EXPT1)
+  # CD34+: progenitores/LSC enriquecidas (EXPT2 y EXPT3)
+  sobj$cell_type <- ifelse(grepl("CD45", nombre), "huCD45", "huCD34")
+
+  # --- Cohorte de pacientes ---
+  # COH4 y COH5 — importante para controlar variabilidad
+  sobj$cohort <- ifelse(grepl("COH4", nombre), "COH4", "COH5")
+
+  # --- Experimento de captura ---
+  # EXPT1, EXPT2, EXPT3 capturas independientes 
+  # IMPORTANTE para detectar efectos batch
+  sobj$experiment <- sub(".*_(EXPT[0-9])_.*", "\\1", nombre)
+
+  message("  -> ", ncol(sobj), " células, ", nrow(sobj), " genes")
+  seurat_list[[nombre]] <- sobj
+}
+```
+
+------------------------------------------------------------------------
+
+## Paso 4. Calcular métricas de calidad (QC)
+
+Los **genes mitocondriales** `MT-`, son los que nos indican si una célula está dañada o en apoptosis. En el estudio se excluyen a células con \>20% de contenido mitocondrial en las células huCD45+ de PDX.
+
+Los **genes ribosomales** `^RP[SL]`, en este caso resultan ser relevantes en LMC porque en el estudió se observó upregulation de genes de proteínas ribosomales en LSC quiescentes (ESC-REGlow), lo que conecta con pluripotencia de células ES.
+
+Los **genes de hemoglobina** (`^HB`) dado a que las células de LSC humanas se aislaron de PDX es posible que haya ARN murino. Un alto porcentaje nos puede indicar contaminación.
+
+```{r calcular_qc}
+for (nombre in names(seurat_list)) {
+  
+  # --- Genes mitocondriales ---
+  seurat_list[[nombre]] <- PercentageFeatureSet(
+    seurat_list[[nombre]], 
+    pattern  = "^MT-", 
+    col.name = "percent_mito"
+  )
+  
+  # --- Genes ribosomales ---
+  #  LSC quiescentes tienen alta expresión ribosomal
+  seurat_list[[nombre]] <- PercentageFeatureSet(
+    seurat_list[[nombre]], 
+    pattern  = "^RP[SL]", 
+    col.name = "percent_ribo"
+  )
+  
+  # --- Genes de hemoglobina ---
+  seurat_list[[nombre]] <- PercentageFeatureSet(
+    seurat_list[[nombre]], 
+    pattern  = "^HB[^(P|E|S)]", 
+    col.name = "percent_hb"
+  )
+}
+
+# Visualizar resumen de QC para muestra 1
+head(seurat_list[[1]]@meta.data)
+```
+
+------------------------------------------------------------------------
+
+## Paso 5. Fusionar todos los objetos en uno solo
+
+Para poder hacer un control de calidad y visualización comparativa entre las condiciones experimentales, fusionamos todas las muestras en un único objeto Seurat.
+
+```{r fusionar_objetos}
+# primer objeto es la "base", los demás se añaden
+primer_objeto <- seurat_list[[1]]
+resto_objetos  <- seurat_list[-1]
+
+alldata <- merge(
+  x           = primer_objeto,
+  y           = resto_objetos,
+  add.cell.ids = names(seurat_list),  # se agrega prefijo del nombre de muestra a cada barcode
+  project     = "GSE218185_CML"
+)
+
+# Limpiar memoria
+rm(seurat_list, primer_objeto, resto_objetos)
+gc()
+
+# Verificar el objeto fusionado
+alldata
+```
+
+Visualizar la metadata:
+
+```{r ver_metadata}
+head(alldata@meta.data, 10)
+```
+
+¿Cuántas células hay por muestra?
+
+```{r celulas_por_muestra}
+table(alldata$orig.ident)
+```
+
+¿Cuántas células hay por condición?
+
+```{r celulas_por_condicion}
+table(alldata$condition)
+```
+
+------------------------------------------------------------------------
+
+## Paso 6. Visualización gráfica del QC
+
+La visualización gŕafica del QC para evaluar la viabilidad celular y la calidad de secuenciación, usaremos `split.by = "condition"` para comparar las 3 condiciones de tratamiento.
+
+Este paso es muy importante porque:
+
+1.  La calidad puede variar según el injerto.
+
+2.  El tratamiento con NIL+IDASA puede inducir apoptosis, por lo que, elevaría el porcentaje mitocondrial (sin embargo, es importante distinguirlo de los artefactos)\
+
+**Violinplots**
+
+-   nFeature_RNA y nCount_RNA
+
+La mayoría de las muestras presentan una distribución homogénea y esperada, con medianas que oscilan entre 1,000 y 2,500 genes detectados por célula (`nFeature_RNA`). Sin embargo, la muestra **`COH4_EXPT2_VEH_CD34`** tiene una distribución notablemente diferente al resto, ya que su violin es más ancho y se extiende hasta \~7,500 genes.
+
+Nuevamente la misma muestra destaca por tener 75,000 transcritos totales (`nCount_RNA`), mientras que el resto se mantiene por debajo de \~25,000. Este patrón podría ser un indicador de **dobletes**.
+
+-   percent_mito
+
+La mayoría de los grupos experimentales mantienen una proporción mitocondrial baja, la muestra **`COH4_EXPT2_NIL_IDASA_CD34`** presenta un ensanchamiento en su violín, con una gran proporción de su población celular superando el 10% y llegando hasta el 25% de expresión mitocondrial.Esto es **biológicamente consistente,** ya que la terapia combinada induce mayor estrés oxidativo en las células troncales leucemicas (LSC)
+
+-   percent_hb
+
+Algunas muestras contienen subpoblaciones celulares donde la expresión de genes de hemoglobina constituye casi el 100% de sus transcritos.Esto es una señal de alerta, ya que podría indicar contaminación por eritrocitos dado que las células humanas fueron extraídas directamente de la médula ósea de los ratones PDX.
+
+```{r violinplot_qc, warning=FALSE, message=FALSE, fig.width=14, fig.height=10, fig.cap="**Figura 7**..Distribución de las métricas de control de calidad (QC).Los gráficos de violín muestran la distribución de cinco parámetros técnicos en las 9 réplicas biológicas del estudio."}
+feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo", "percent_hb")
+
+VlnPlot(
+  alldata, 
+  group.by = "orig.ident",
+  features = feats, 
+  pt.size  = 0.1, 
+  ncol     = 3
+)
+```
+
+**\
+Scatter plots**
+
+El gráfico de dispersión confirma la relación entre las métricas de secuenciación. Se puede observar una correlación negativa débil (**-0.27**) entre el porcentaje mitocondrial y los conteos totales, donde las gotas con muy pocos transcritos suelen ser restos celulares. Por otro lado, se observa una correlación positiva (**0.81**) entre `nCount_RNA` y `nFeature_RNA`, lo cual significa que existe una relación entre el número de moléculas de ARN que se capturaron y cuántos genes distintos se detectaron.
+
+```{r scatter_qc, fig.width=12, fig.height=5, fig.cap="**Figura 2**.Correlación empírica entre las métricas de secuenciación.Gráficos de dispersión (FeatureScatter) que evalúan la relación bidimensional de las métricas de QC en la población total de células."}
+# nCount vs percent_mito: células con muchos conteos pero alto % mito son sospechosas
+plot1 <- FeatureScatter(
+  alldata, 
+  feature1 = "nCount_RNA", 
+  feature2 = "percent_mito",
+  group.by = "orig.ident", 
+  pt.size  = 0.5
+)
+
+# nCount vs nFeature: correlación esperada — si una célula tiene muchos UMIs,
+# debería tener muchos genes distintos. 
+plot2 <- FeatureScatter(
+  alldata, 
+  feature1 = "nCount_RNA", 
+  feature2 = "nFeature_RNA",
+  group.by = "orig.ident", 
+  pt.size  = 0.5
+)
+
+plot1 + plot2
+```
+
+Número de células **ANTES** del filtrado:
+
+```{r antes_filtrado}
+cat("Total de células antes del filtrado:", ncol(alldata), "\n")
+table(alldata$orig.ident)
+```
+
+------------------------------------------------------------------------
+
+## Paso 7. Filtrado de células de baja calidad
+
+Los umbrales de filtrado están basados en:
+
+1.  **`nFeature_RNA > 200`**: Elimina "células" vacías o droplets vacíos.
+
+2.  **`nFeature_RNA < 6000`**: Elimina dobletes (dos células capturadas juntas tienen el doble de genes). Específicamente para este análisis, al trabajar con **células de médula ósea** (progenitores hematopoyéticos CD34+ y LSC), suelen ser transcriptomicamente más complejas y en estados de diferenciación temprana se activan muchos programas genéticos simultáneamente. Por esta razón, usar 2,500 como límite eliminaría células biológicamente reales, ya que, por ejemplo un progrenitor CD34+ puede expresar entre 3,000 y 5,000 genes detectables.
+
+3.  **`percent_mito < 20`**: En el estudio se usó \>20% de contenido mitocondrial como criterio de exclusión para células huCD45+/huCD34+ en PDX.
+
+4.  **`percent_ribo < 50`**: Las LSC quiescentes tienen alta expresión de genes ribosomales, entonces un umbral bajo podría eliminar células biológicamente relevantes. Usamos 50% para conservar estas poblaciones.
+
+```{r filtrado}
+data.filt <- subset(
+  alldata, 
+  subset = nFeature_RNA > 200 & 
+           nFeature_RNA < 6000 & 
+           percent_mito < 20  &
+           percent_ribo < 50
+)
+
+cat("Células ANTES del filtrado:", ncol(alldata), "\n")
+cat("Células DESPUÉS del filtrado:", ncol(data.filt), "\n")
+cat("Células eliminadas:", ncol(alldata) - ncol(data.filt), "\n\n")
+
+# Células por muestra después del filtrado
+table(data.filt$orig.ident)
+```
+
+Visualizar el objeto filtrado:
+
+```{r ver_objeto_filtrado}
+data.filt
+```
+
+Tenemos 17,861 genes detectados en 13,647 células.
+
+\
+Ver metadata filtrada:
+
+```{r ver_metadata_filtrada}
+head(data.filt@meta.data, 5)
+```
+
+¿Qué capas (layers) tenemos disponibles?
+
+```{r ver_capas}
+Layers(data.filt, assay = "RNA")
+```
+
+------------------------------------------------------------------------
+
+## Paso 8. Exploración de genes más abundantes
+
+Para comprender la dinámica transcripcional de nuestras muestras antes de realizar cualquier agrupamiento celular, es importante hacer una exploración global de los genes que dominan el transcriptoma, para posteriormente hacer una exploración dirigida hacia alguna firma molecular específica reportada de esta enfermedad.
+
+### ¿Cuántas lecturas totales tiene cada gen en cada dataset?
+
+```{r lecturas_por_gen}
+# 1. Obtenemos el nombre de todas las capas en el assay "RNA"
+capas_disponibles <- Layers(data.filt, assay = "RNA")
+
+# Filtramos y unicamentenos quedamos con las capas de conteos puros ("counts")
+capas_conteos <- capas_disponibles[grepl("counts", capas_disponibles)]
+
+# 2. Extraemos la matriz de cada capa (preserva los rownames correctos)
+cell_counts <- lapply(capas_conteos, function(capa) {
+  LayerData(data.filt, assay = "RNA", layer = capa)
+})
+
+# Asignarle los nombres de las muestras a la lista para no perder la organizacion
+names(cell_counts) <- capas_conteos
+
+# 3. Total de lecturas por gen en cada dataset
+gene_totals <- lapply(cell_counts, function(mat) {
+  rowSums(mat)
+})
+
+# 4. Top 10 genes más abundantes por dataset
+top_genes <- lapply(gene_totals, function(x) {
+  sort(x, decreasing = TRUE)[1:10]
+})
+
+top_genes
+```
+
+### ¿Cuántas células expresan cada gen?
+
+```{r celulas_por_gen}
+expr_cells <- lapply(cell_counts, function(mat) {
+  cells_per_gene <- rowSums(mat > 0)
+  names(cells_per_gene) <- rownames(mat)
+  cells_per_gene
+})
+```
+
+### Heatmap de top genes
+
+```{r heatmap_top_genes, fig.width=10, fig.height=6, fig.cap="**Figura 3**.Distribución celular de los transcritos globales más abundantes. Mapa de calor (heatmap) que ilustra el número de células individuales con expresión detectable (UMIs > 0) para los genes con mayor cantidad de lecturas absolutas en el dataset. Las columnas representan cada una de las 9 réplicas biológicas evaluadas, mientras que las filas conforman el panel consolidado de los genes Top 10 más expresados por muestra. La intensidad del color es proporcional a la cantidad de células que expresan el gen.."}
+library(reshape2)
+
+df_expr <- do.call(rbind, lapply(names(expr_cells), function(name) {
+  data.frame(
+    dataset = name,
+    gene    = names(expr_cells[[name]]),
+    cells   = expr_cells[[name]]
+  )
+}))
+
+df_top <- do.call(rbind, lapply(names(top_genes), function(name) {
+  genes <- names(top_genes[[name]])
+  data.frame(
+    dataset = name,
+    gene    = genes,
+    cells   = expr_cells[[name]][genes]
+  )
+}))
+
+ggplot(df_top, aes(x = dataset, y = gene, fill = cells)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "darkred") +
+  theme_minimal() +
+  labs(
+    title = "Número de células que expresan los top genes por condición",
+    subtitle = "Dataset: GSE218185",
+    x = "Dataset / Muestra",
+    y = "Gen",
+    fill = "# células"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Interpretación biológica de los transcritos dominantes**
+
+Al evaluar los genes más abundantes y su distribución celular en el mapa de calor, se identifican puede concluir lo siguiente:
+
+[1.]{.underline} **Confirmación del aislamiento celular (CD45+ vs CD34+)**: Se observa una clara división transcripcional entre los grupos. Los marcadores característicos de células inmunitarias maduras están presentes en las muestras (CD45+), pero desaparecen en las fracciones enriquecidas (CD34+).
+
+[2.]{.underline} **Influencia del microambiente (Médula Ósea):** Se visualiza una dominancia de genes eritroides (como la hemoglobina y ferritina) en casi todas las muestras es una firma biológica esperada, ya que refleja el nicho anatómico de donde se extrajeron las células.
+
+[3.]{.underline} **Genes ubicuos y la necesidad de control técnico:** Por otro lado, se observan transcritos constitutivos (estructurales) y de fuerte retención nuclear, como el lncRNA **MALAT1**, por lo que es necesario tenerlo en cuenta para descartar que las señales provengan de células lisadas.
+
+------------------------------------------------------------------------
+
+## Paso 9. Análisis del lncRNA MALAT1
+
+El gen *MALAT1* (*Metastasis Associated Lung Adenocarcinoma Transcript 1*), también conocido como *NEAT2*, codifica para un ARN largo no codificante (lncRNA) que se localiza en los dominios nucleares denominados *speckles*. Su función principal se centra en la regulación de la expresión génica a nivel de splicing y transcripción.
+
+MALAT1 se utiliza como biomarcador de calidad técnica, ya que al ser un transcrito de retención nuclear, un exceso de sus lecturas (típicamente \>20% de los UMIs totales de una célula) sugiere que la membrana celular sufrió una lisis parcial durante el procesamiento.
+
+### Porcentaje de UMIs de MALAT1 por célula
+
+```{r malat1_percent}
+malat1_percent <- lapply(cell_counts, function(mat) {
+  if ("MALAT1" %in% rownames(mat)) {
+    gene_counts  <- mat["MALAT1", ]
+    total_counts <- colSums(mat)
+    100 * gene_counts / total_counts
+  } else {
+    warning("MALAT1 no encontrado en esta muestra")
+    NULL
+  }
+})
+```
+
+### Células con \>20% de UMIs de MALAT1
+
+```{r malat1_summary}
+malat1_summary <- lapply(malat1_percent, function(pct) {
+  if (is.null(pct)) return(NULL)
+  total_cells  <- length(pct)
+  cells_above  <- sum(pct > 20)
+  percent_cells <- 100 * cells_above / total_cells
+  list(
+    total_cells   = total_cells,
+    cells_above   = cells_above,
+    percent_cells = round(percent_cells, 2)
+  )
+})
+
+malat1_summary
+```
+
+### Porcentaje global
+
+```{r malat1_global}
+total_cells_all <- sum(sapply(malat1_summary, function(x) if (!is.null(x)) x$total_cells else 0))
+cells_above_all <- sum(sapply(malat1_summary, function(x) if (!is.null(x)) x$cells_above else 0))
+percent_global  <- 100 * cells_above_all / total_cells_all
+
+cat("Porcentaje global de células con MALAT1 > 20% de UMIs:", round(percent_global, 2), "%\n")
+```
+
+\
+La evaluación de los niveles de ***MALAT1*** a lo largo de las 9 réplicas biológicas a nivel general, únicamente el **0.7%** del total de las células supera el umbral crítico del 20% de UMIs dedicados a ***MALAT1***, por lo que, el dataset está libre de sesgos técnicos por daño de membrana y en condiciones óptimas para las fases de reducción de dimensionalidad (PCA).
+
+------------------------------------------------------------------------
+
+## Paso 10. Normalización de los datos
+
+La normalización con `NormalizeData()` aplica la normalización estándar de Seurat: para cada célula, divide el conteo de cada gen entre el total de conteos de esa célula, multiplica por un factor de escala (10,000 por defecto, y luego aplica una transformación logarítmica (`log1p`). Esto corrige por diferencias en profundidad de secuenciación entre células.
+
+En el estudio se menciona específicamente que se procesaron los datos con Cell Ranger seguido de Seurat con `LogNormalize` y `scale.factor = 10000`, exactamente el default de `NormalizeData()`.
+
+```{r normalizar}
+pbmc <- NormalizeData(data.filt, verbose = FALSE)
+
+# Verificar que ahora tenemos la capa 'data' (normalizada) además de 'counts'
+Layers(pbmc, assay = "RNA")
+```
+
+------------------------------------------------------------------------
+
+## Paso 11. Guardar el objeto Seurat
+
+Una vez que guardamos el objeto, el cual contiene:
+
+1.  `counts` — datos crudos
+
+2.  `data` — datos normalizados
+
+3.  `metadata` — datos de QC
+
+Tenemos lo necesario para los siguientes análisis: selección de genes variables, reducción de dimensionalidad (PCA), UMAP, y clustering
+
+```{r guardar}
+# Crear carpeta output si no existe
+if (!dir.exists("output")) dir.create("output")
+
+saveRDS(pbmc, file = "output/GSE218185_CML_normalized.rds")
+cat("Objeto guardado en: output/GSE218185_CML_normalized.rds\n")
+cat("El objeto contiene:\n")
+cat("  - Células totales:", ncol(pbmc), "\n")
+cat("  - Genes totales:", nrow(pbmc), "\n")
+cat("  - Capas disponibles:", paste(Layers(pbmc), collapse = ", "), "\n")
+```
+
+------------------------------------------------------------------------
+
+## Resumen del flujo de trabajo
+
+```         
+Carpetas GSM (barcodes + features + matrix)
+         ↓
+    Read10X() por muestra
+         ↓
+  CreateSeuratObject() → metadata de condición y tipo celular
+         ↓
+    merge() → un solo objeto alldata
+         ↓
+ PercentageFeatureSet() → percent_mito, percent_ribo, percent_hb
+         ↓
+  VlnPlot() + FeatureScatter() → visualización QC
+         ↓
+    subset() → filtrado (nFeature 200-6000, mito <20%, ribo <50%)
+         ↓
+  Exploración de top genes y MALAT1
+         ↓
+   NormalizeData() → normalización log(CP10K)
+         ↓
+  saveRDS() → objeto listo para clustering
+```
+
+------------------------------------------------------------------------
+
+## Referencias
+
+-   Información del dataset de [GEO GSE218185](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE218185)
+-   Scott MT et al. *Nat Commun* 2024;15:651. DOI: 10.1038/s41467-024-44771-9
+-   [Seurat — Guided Clustering Tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial)
+-   Práctica 1: COVID-19 vs healthy (GSE149689) — Curso Bioinformática LCG
